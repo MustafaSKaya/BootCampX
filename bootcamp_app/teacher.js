@@ -11,16 +11,20 @@ pool.connect().then(() => {
     console.log('connected');
 });
 
-pool.query(`
-SELECT teachers.name as teacher, cohorts.name as cohort 
-FROM assistance_requests 
-JOIN teachers ON teachers.id = teacher_id 
-JOIN students ON students.id = student_id 
-JOIN cohorts ON cohorts.id = cohort_id 
-WHERE cohorts.name LIKE '%${process.argv[2]}%' 
-GROUP BY teachers.name, cohorts.name 
-ORDER BY teachers.name;
-`)
+const cohortName = process.argv[2];
+const values = [`%${cohortName}%`];
+
+const queryString = `
+SELECT DISTINCT teachers.name as teacher, cohorts.name as cohort 
+FROM teachers
+JOIN assistance_requests ON teacher_id = teachers.id
+JOIN students ON student_id = students.id
+JOIN cohorts ON cohort_id = cohorts.id
+WHERE cohorts.name LIKE $1
+ORDER BY teacher ;
+`;
+
+pool.query(queryString , values)
 .then(res => {
   res.rows.forEach(row => {
     console.log(`${row.cohort} ${row.teacher}`);
